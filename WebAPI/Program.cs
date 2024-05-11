@@ -3,6 +3,10 @@ using DataAccessLayer.Repository;
 using DataAccessLayer;
 using BusinessLayer.Contracts;
 using BusinessLayer.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebAPI
 {
@@ -26,7 +30,25 @@ namespace WebAPI
             builder.Services.AddScoped(typeof(ITestService), typeof(TestService));
 
             //Database
-            builder.Services.AddDbContext<MyDbContext>();
+            builder.Services.AddDbContext<MyDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("MyDbContext")));
+                var conf = builder.Configuration;
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x =>
+                {
+                    x.RequireHttpsMetadata = true;
+                    x.SaveToken = true;
+                    x.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = conf["Jwt:Issuer"].ToString(),
+                        ValidAudience = conf["Jwt:Audience"].ToString(),
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(conf["Jwt:Key"]))
+                    };
+                });
+
 
             var app = builder.Build();
 
