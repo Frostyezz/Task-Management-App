@@ -2,9 +2,9 @@
 {
     public interface IApiService
     {
-        Task<object> GetAsync(string uri);
-        Task<object> PostAsync(string uri, object data);
-        Task<object> PutAsync(string uri, object data);
-        Task<bool> DeleteAsync(string uri);
+        Task<IApiResponse<object>> GetAsync(string uri);
+        Task<IApiResponse<object>> PostAsync(string uri, object data);
+        Task<IApiResponse<object>> PutAsync(string uri, object data);
+        Task<IApiResponse<object>> DeleteAsync(string uri);
     }
 }

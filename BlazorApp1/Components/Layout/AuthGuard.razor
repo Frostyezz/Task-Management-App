@@ -1,0 +1,35 @@
+﻿@inject ILocalStorageService localstorage
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+@code {
+    private bool isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (!isInitialized)
+            {
+                var jwtToken = await GetJwtTokenFromLocalStorage();
+
+                if (string.IsNullOrEmpty(jwtToken))
+                {
+                    NavigateToLogin();
+                }
+
+                isInitialized = true;
+            }
+        }
+    }
+
+    private async Task<string?> GetJwtTokenFromLocalStorage()
+    {
+        return await localstorage.GetItemAsStringAsync("jwtToken");
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+}

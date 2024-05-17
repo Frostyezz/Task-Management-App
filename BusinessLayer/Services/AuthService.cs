@@ -29,7 +29,7 @@ namespace BusinessLayer.Services
                         expires: DateTime.Now.AddDays(30),
                         signingCredentials: cred);
 
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token) ?? throw new InvalidOperationException("JWT token generation failed.");
             return jwt;
         }
 

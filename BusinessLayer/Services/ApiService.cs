@@ -1,9 +1,7 @@
 ﻿using BusinessLayer.Contracts;
-using System;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+using BusinessLayer.Types;
 
 namespace BusinessLayer.Services
 {
@@ -18,13 +16,13 @@ namespace BusinessLayer.Services
             _jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
 
-        public async Task<object> GetAsync(string uri)
+        public async Task<IApiResponse<object>> GetAsync(string uri)
         {
             var response = await _httpClient.GetAsync(uri);
             return await HandleResponse(response);
         }
 
-        public async Task<object> PostAsync(string uri, object data)
+        public async Task<IApiResponse<object>> PostAsync(string uri, object data)
         {
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -33,7 +31,7 @@ namespace BusinessLayer.Services
             return await HandleResponse(response);
         }
 
-        public async Task<object> PutAsync(string uri, object data)
+        public async Task<IApiResponse<object>> PutAsync(string uri, object data)
         {
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -42,31 +40,41 @@ namespace BusinessLayer.Services
             return await HandleResponse(response);
         }
 
-        public async Task<bool> DeleteAsync(string uri)
+        public async Task<IApiResponse<object>> DeleteAsync(string uri)
         {
             var response = await _httpClient.DeleteAsync(uri);
-            return response.IsSuccessStatusCode;
+            return await HandleResponse(response);
         }
 
-        private async Task<object> HandleResponse(HttpResponseMessage response)
+        private async Task<IApiResponse<object>> HandleResponse(HttpResponseMessage response)
         {
+            var apiResponse = new ApiResponse<object>
+            {
+                IsSuccess = response.IsSuccessStatusCode
+            };
+
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-
                 try
                 {
-                    return JsonSerializer.Deserialize<object>(responseContent, _jsonSerializerOptions);
+                    apiResponse.Data = JsonSerializer.Deserialize<object>(responseContent, _jsonSerializerOptions);
                 }
                 catch (JsonException)
                 {
-                    return responseContent;
+                    apiResponse.Data = responseContent;
                 }
             }
             else
             {
-                return null;
+                var errorContent = await response.Content.ReadAsStringAsync();
+                if (!string.IsNullOrEmpty(errorContent))
+                {
+                    apiResponse.ErrorMessage = errorContent;
+                }
             }
+
+            return apiResponse;
         }
     }
 }

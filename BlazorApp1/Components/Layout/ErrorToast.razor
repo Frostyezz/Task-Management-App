@@ -1,0 +1,28 @@
+﻿<div class="toast @Show" style="position: absolute; bottom: 20px; right: 20px;">
+        <div class="toast-header">
+            <strong class="mr-auto">Something went wrong!</strong>
+        <button @onclick="HandleClose" type="button" class="mb-1 close" aria-label="Close" style="margin-left: auto;">
+           <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        <div class="toast-body">
+            @Error
+        </div>
+</div>
+
+@code {
+    [Parameter] public string? Error { get; set; }
+    private string _show = "";
+
+    [Parameter]
+    public string Show
+    {
+        get => Error != null ? "show" : _show;
+        set => _show = value;
+    }
+
+    private void HandleClose()
+    {
+        Show = "";
+    }
+}
