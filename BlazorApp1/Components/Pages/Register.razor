@@ -1,0 +1,49 @@
+﻿@page "/register"
+@using BlazorApp1.ValidationModels;
+@inject HttpClient httpClient
+@inject ILocalStorageService localstorage;
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+
+    <div class="w-100 d-flex justify-content-center align-content-center">
+    <EditForm FormName="register" Model="@user" OnValidSubmit="HandleSubmit" class="w-50 d-flex flex-column justify-content-center gap-3">
+        <DataAnnotationsValidator />
+        <h3 class="text-center">Create an account</h3>
+        <div>
+            <label class="form-label mb-1" for="username">Name:</label>
+            <InputText class="form-control" type="text" id="name" @bind-Value="user.Name" />
+            <ValidationMessage For="() => user.Name" />
+        </div>
+        <div> 
+            <label class="form-label mb-1" for="email">Email:</label>
+            <InputText class="form-control" type="email" id="email" @bind-Value="user.Email" />
+            <ValidationMessage For="() => user.Email" />
+        </div>
+        <div>
+            <label class="form-label mb-1" for="password">Password:</label>
+            <InputText class="form-control" type="password" id="password" @bind-Value="user.Password" />
+            <ValidationMessage For="() => user.Password" />
+        </div>
+        <button class="btn btn-primary mt-3" type="submit">Sign Up</button>
+    </EditForm>
+    </div>
+
+
+@code {
+    RegisterUser user = new RegisterUser();
+    private ApiService apiService;
+
+    protected override void OnInitialized()
+    {
+        apiService = new ApiService(httpClient);
+
+    }
+
+    public async Task HandleSubmit(EditContext context)
+    {
+        var jwt = await apiService.PostAsync("https://localhost:7027/Auth/register", context.Model);
+        await localstorage.SetItemAsStringAsync("jwtToken", jwt as string);
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+}

@@ -49,6 +49,15 @@ namespace WebAPI
                     };
                 });
 
+            builder.Services.AddCors(option =>
+            {
+                option.AddPolicy("Default", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+            });
 
             var app = builder.Build();
 
@@ -62,6 +71,8 @@ namespace WebAPI
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
+
+            app.UseCors("Default");
 
             app.MapControllers();
 

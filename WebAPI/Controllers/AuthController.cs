@@ -2,10 +2,8 @@
 using DataAccessLayer.Repository;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Dto;
-using System.Security.Cryptography;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using BusinessLayer.Services;
+
 
 namespace WebAPI.Controllers
 {
@@ -16,11 +14,13 @@ namespace WebAPI.Controllers
 
         private readonly IRepository<User> _userRepository;
         private readonly IConfiguration _configuration;
+        private readonly AuthService _authService;
 
         public AuthController(IRepository<User> userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _authService = new AuthService(configuration);
         }
 
         [HttpPost("register")]
@@ -32,14 +32,15 @@ namespace WebAPI.Controllers
                 return BadRequest("This email adress is already used.");
             }
 
-            CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            _authService.CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
             _userRepository.Add(new User(userDto.Name, passwordHash, passwordSalt, userDto.Email));
             _userRepository.SaveChanges();
 
             var user = _userRepository.Find(u => u.Email == userDto.Email).First();
+            Console.WriteLine(user.Id);
+            return Ok(_authService.CreateToken(user.Id));
 
-            return Ok(CreateToken(user.Id));
         }
 
         [HttpPost("login")]
@@ -50,49 +51,12 @@ namespace WebAPI.Controllers
             {
                 return BadRequest("Wrong email or password.");
             }
-            if (!VerifyPasswordHash(userDto.Password, user.Password, user.PasswordSalt))
+            if (!_authService.VerifyPasswordHash(userDto.Password, user.Password, user.PasswordSalt))
             {
                 return BadRequest("Wrong email or password.");
             }
-            string token = CreateToken(user.Id);
+            string token = _authService.CreateToken(user.Id);
             return Ok(token);
-        }
-
-        private string CreateToken(Guid UserId)
-        {
-            List<Claim> claims =
-            [
-                new(ClaimTypes.NameIdentifier, UserId.ToString())
-            ];
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["Jwt:key"]));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
-
-            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
-                _configuration["Jwt:Audience"],
-                claims: claims,
-                        expires: DateTime.Now.AddDays(30),
-                        signingCredentials: cred);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt;
-        }
-
-        private void CreatePasswordHash(String password, out byte[] passwordHash, out byte[] passwordSalt)
-        {
-            using (HMACSHA512 hmac = new HMACSHA512())
-            {
-                passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            }
-        }
-
-        private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
-        {
-            using (HMACSHA512 hmac = new HMACSHA512(passwordSalt))
-            {
-                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-                return computedHash.SequenceEqual(passwordHash);
-            }
         }
     }
     }
