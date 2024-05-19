@@ -14,17 +14,22 @@ namespace DataAccessLayer.Repository
             _entities = context.Set<T>();
         }
 
-        public T GetById(Guid id)
-        {
-            return _entities.Find(id);
-        }
-
         public IEnumerable<T> GetAll()
         {
             return _entities.ToList();
         }
 
+        public IQueryable<T> GetAllAsQueryable() 
+        {
+            return _entities.AsQueryable();
+        }
+
         public IEnumerable<T> Find(Expression<Func<T, bool>> predicate)
+        {
+            return _entities.Where(predicate);
+        }
+
+        public IQueryable<T> FindAsQueryable(Expression<Func<T, bool>> predicate)
         {
             return _entities.Where(predicate);
         }

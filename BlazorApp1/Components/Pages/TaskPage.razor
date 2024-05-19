@@ -1,0 +1,97 @@
+﻿@page "/task/{id}"
+@inject HttpClient httpClient
+@inject NavigationManager Navigation
+@inject ILocalStorageService localstorage
+@using System.Net.Http.Headers
+@using BlazorApp1.Dto
+@rendermode InteractiveServer
+
+<h3>Task Details</h3>
+
+@if (task != null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">@task.Title</h5>
+            <p class="card-text">@task.Description</p>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>Priority:</strong> @task.Priority</li>
+            <li class="list-group-item"><strong>Deadline:</strong> @task.Deadline.ToString("yyyy-MM-dd")</li>
+            <li class="list-group-item"><strong>Status:</strong> @task.Status</li>
+            <li class="list-group-item"><strong>Owner:</strong> @task.Owner?.Name</li>
+            @if (task.Assignees != null && task.Assignees.Any())
+            {
+                <li class="list-group-item">
+                    <strong>Assignees:</strong>
+                    <ul>
+                        @foreach (var assignee in task.Assignees)
+                        {
+                            <li>@assignee.Name</li>
+                        }
+                    </ul>
+                </li>
+            }
+            @if (task.Categories != null && task.Categories.Any())
+            {
+                <li class="list-group-item">
+                    <strong>Categories:</strong>
+                    <ul>
+                        @foreach (var category in task.Categories)
+                        {
+                            <li>@category</li>
+                        }
+                    </ul>
+                </li>
+            }
+            @if (task.Tags != null && task.Tags.Any())
+            {
+                <li class="list-group-item">
+                    <strong>Tags:</strong>
+                    <ul>
+                        @foreach (var tag in task.Tags)
+                        {
+                            <li>@tag</li>
+                        }
+                    </ul>
+                </li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <Spinner />
+}
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private TaskDto task;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedToken = await localstorage.GetItemAsStringAsync("jwtToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
+            await LoadTask();
+        }
+    }
+
+    private async Task LoadTask()
+    {
+        var apiService = new ApiService(httpClient);
+        var response = await apiService.GetAsync<TaskDto>($"https://localhost:7027/Task/{id}");
+        if (response.IsSuccess)
+        {
+            task = response.Data;
+        }
+        else
+        {
+            Navigation.NavigateTo("/Error");
+        }
+        StateHasChanged();
+    }
+}

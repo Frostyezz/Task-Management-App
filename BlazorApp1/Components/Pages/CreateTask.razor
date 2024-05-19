@@ -1,0 +1,89 @@
+﻿@page "/create-task"
+@inject HttpClient httpClient
+@inject NavigationManager Navigation
+@inject ILocalStorageService localstorage
+@using System.Net.Http.Headers
+@using BlazorApp1.Dto
+@rendermode InteractiveServer
+
+
+<EditForm class="mb-3 w-50 mx-auto" Model="@newTask" OnValidSubmit="HandleValidSubmit">
+<h3 class="text-center">Create Task</h3>
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <InputText id="title" class="form-control" @bind-Value="newTask.Title" />
+        <ValidationMessage For="() => newTask.Title" />
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <InputTextArea id="description" class="form-control" @bind-Value="newTask.Description"></InputTextArea>
+        <ValidationMessage For="() => newTask.Description" />
+    </div>
+    <div class="mb-3">
+        <label for="priority" class="form-label">Priority</label>
+        <InputSelect id="priority" class="form-control" @bind-Value="newTask.Priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </InputSelect>
+        <ValidationMessage For="() => newTask.Priority" />
+    </div>
+    <div class="mb-3">
+        <label for="deadline" class="form-label">Deadline</label>
+        <InputDate id="deadline" class="form-control" @bind-Value="newTask.Deadline" />
+        <ValidationMessage For="() => newTask.Deadline" />
+    </div>
+    <div class="mb-3">
+        <label for="categories" class="form-label">Categories (comma separated)</label>
+        <InputText id="categories" class="form-control" @bind-Value="categoriesInput" />
+        <ValidationMessage For="() => categoriesInput" />
+    </div>
+    <div class="mb-3">
+        <label for="tags" class="form-label">Tags (comma separated)</label>
+        <InputText id="tags" class="form-control" @bind-Value="tagsInput" />
+        <ValidationMessage For="() => tagsInput" />
+
+    </div>
+    <div class="mb-3">
+        <label for="assignees" class="form-label">Assignees (comma separated)</label>
+        <InputText id="assignees" class="form-control" @bind-Value="assigneesInput" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Task</button>
+</EditForm>
+
+@code {
+    private ValidationModels.Task newTask = new ValidationModels.Task { Deadline = DateTime.Today, Status = "Open" };
+    private string categoriesInput;
+    private string tagsInput;
+    private string assigneesInput;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedToken = await localstorage.GetItemAsStringAsync("jwtToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        newTask.Categories = categoriesInput?.Split(',').Select(c => c.Trim()).ToList();
+        newTask.Tags = tagsInput?.Split(',').Select(t => t.Trim()).ToList();
+
+        var apiService = new ApiService(httpClient);
+        var response = await apiService.PostAsync<TaskDto>("https://localhost:7027/Task", newTask);
+
+        if (response.IsSuccess)
+        {
+            Navigation.NavigateTo("/tasks");
+        }
+        else
+        {
+            Navigation.NavigateTo("/Error");
+        }
+    }
+}

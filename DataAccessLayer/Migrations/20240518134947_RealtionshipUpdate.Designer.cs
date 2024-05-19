@@ -4,6 +4,7 @@ using DataAccessLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240518134947_RealtionshipUpdate")]
+    partial class RealtionshipUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,9 +30,6 @@ namespace DataAccessLayer.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Categories")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("datetime2");
@@ -45,12 +45,6 @@ namespace DataAccessLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Tags")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -60,26 +54,6 @@ namespace DataAccessLayer.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Tasks");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("5704f4c0-9572-498c-924f-6606cc4177a2"),
-                            Deadline = new DateTime(2024, 5, 26, 18, 50, 56, 964, DateTimeKind.Utc).AddTicks(1769),
-                            Description = "Description for Task 1",
-                            OwnerId = new Guid("8e1be324-bee0-446f-902d-498762b9483f"),
-                            Priority = "High",
-                            Title = "Task 1"
-                        },
-                        new
-                        {
-                            Id = new Guid("9eb35740-cba3-45d6-a8e8-e401a9955831"),
-                            Deadline = new DateTime(2024, 6, 2, 18, 50, 56, 964, DateTimeKind.Utc).AddTicks(1777),
-                            Description = "Description for Task 2",
-                            OwnerId = new Guid("41580610-42fb-48de-8825-08b311021f4b"),
-                            Priority = "Medium",
-                            Title = "Task 2"
-                        });
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.User", b =>
@@ -107,24 +81,6 @@ namespace DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("8e1be324-bee0-446f-902d-498762b9483f"),
-                            Email = "alice@example.com",
-                            Name = "Alice",
-                            Password = new byte[0],
-                            PasswordSalt = new byte[0]
-                        },
-                        new
-                        {
-                            Id = new Guid("41580610-42fb-48de-8825-08b311021f4b"),
-                            Email = "bob@example.com",
-                            Name = "Bob",
-                            Password = new byte[0],
-                            PasswordSalt = new byte[0]
-                        });
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.UserTask", b =>
@@ -140,18 +96,6 @@ namespace DataAccessLayer.Migrations
                     b.HasIndex("TaskId");
 
                     b.ToTable("UserTasks");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("8e1be324-bee0-446f-902d-498762b9483f"),
-                            TaskId = new Guid("5704f4c0-9572-498c-924f-6606cc4177a2")
-                        },
-                        new
-                        {
-                            UserId = new Guid("41580610-42fb-48de-8825-08b311021f4b"),
-                            TaskId = new Guid("5704f4c0-9572-498c-924f-6606cc4177a2")
-                        });
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Task", b =>

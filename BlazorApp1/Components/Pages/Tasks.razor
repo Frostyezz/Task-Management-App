@@ -1,0 +1,55 @@
+﻿@page "/tasks"
+@inject HttpClient httpClient
+@inject ILocalStorageService localstorage;
+@inject NavigationManager NavigationManager
+@using System.Net.Http.Headers
+@using BlazorApp1.Dto
+@rendermode InteractiveServer
+
+<AuthGuard />
+
+@if(tasks == null)
+{
+    <Spinner />   
+}
+else
+{
+<div class="container my-4">
+    <div class="row">
+            @foreach (var task in tasks)
+            {
+            <div class="col-md-4 mb-4">
+                <TaskItem Task="task" />
+            </div>            
+            }
+    </div>
+</div>
+}
+
+@code {
+    private ApiService apiService;
+    private List<TaskDto>? tasks = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        apiService = new ApiService(httpClient);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedToken = await localstorage.GetItemAsStringAsync("jwtToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
+            var res = await apiService.GetAsync<IEnumerable<TaskDto>>("https://localhost:7027/Task");
+
+            if(res.IsSuccess == false)
+            {
+                NavigationManager.NavigateTo("/", forceLoad: true);
+            }
+
+            tasks = res.Data.ToList();
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,124 @@
+﻿@page "/edit-task/{id}"
+@inject HttpClient httpClient
+@inject NavigationManager Navigation
+@inject ILocalStorageService localstorage
+@using System.Net.Http.Headers
+@using BlazorApp1.Dto
+@rendermode InteractiveServer
+
+<h3>Edit Task</h3>
+
+@if (task != null)
+{
+    <EditForm Model="@task" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <InputText id="title" class="form-control" @bind-Value="task.Title" />
+            <ValidationMessage For="() => task.Title" />
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="task.Description"></InputTextArea>
+            <ValidationMessage For="() => task.Description" />
+        </div>
+        <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <InputSelect id="priority" class="form-control" @bind-Value="task.Priority">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </InputSelect>
+            <ValidationMessage For="() => task.Priority" />
+        </div>
+        <div class="mb-3">
+            <label for="deadline" class="form-label">Deadline</label>
+            <InputDate id="deadline" class="form-control" @bind-Value="task.Deadline" />
+            <ValidationMessage For="() => task.Deadline" />
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <InputText id="status" class="form-control" @bind-Value="task.Status" />
+            <ValidationMessage For="() => task.Status" />
+        </div>
+        <div class="mb-3">
+            <label for="categories" class="form-label">Categories (comma separated)</label>
+            <InputText id="categories" class="form-control" @bind-Value="categoriesInput" />
+            <ValidationMessage For="() => categoriesInput" />
+        </div>
+        <div class="mb-3">
+            <label for="tags" class="form-label">Tags (comma separated)</label>
+            <InputText id="tags" class="form-control" @bind-Value="tagsInput" />
+            <ValidationMessage For="() => tagsInput" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </EditForm>
+}
+else
+{
+    <Spinner />
+}
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private ValidationModels.Task task;
+    private string categoriesInput;
+    private string tagsInput;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedToken = await localstorage.GetItemAsStringAsync("jwtToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
+            await LoadTask();
+        }
+    }
+
+    private async Task LoadTask()
+    {
+        var apiService = new ApiService(httpClient);
+        var response = await apiService.GetAsync<TaskDto>($"https://localhost:7027/Task/{id}");
+        if (response.IsSuccess)
+        {
+            task = new ValidationModels.Task { 
+                Title = response.Data.Title,
+                Description = response.Data.Description, 
+                Deadline = response.Data.Deadline,
+                Status = response.Data.Status,
+                Categories = response.Data.Categories,
+                Tags = response.Data.Tags,
+                Priority = response.Data.Priority
+            };
+            categoriesInput = string.Join(", ", task.Categories ?? new List<string>());
+            tagsInput = string.Join(", ", task.Tags ?? new List<string>());
+        }
+        else
+        {
+            // Handle error
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // Split and set the Categories and Tags
+        task.Categories = categoriesInput?.Split(',').Select(c => c.Trim()).ToList();
+        task.Tags = tagsInput?.Split(',').Select(t => t.Trim()).ToList();
+
+        var apiService = new ApiService(httpClient);
+        var response = await apiService.PutAsync<TaskDto>($"https://localhost:7027/Task/{id}", task);
+        if (response.IsSuccess)
+        {
+            Navigation.NavigateTo("/tasks");
+        }
+        else
+        {
+            Navigation.NavigateTo("/Error");
+        }
+    }
+}

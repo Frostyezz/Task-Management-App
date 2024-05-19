@@ -1,8 +1,53 @@
 ﻿@page "/"
+@inject ILocalStorageService localstorage
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
-<AuthGuard />
+<div class="flex-column d-flex w-100 align-content-center justify-content-center gap-3">
+<h2 class="text-center">Welcome</h2>
+@if (!isLoggedIn)
+{
+        <a href="/login" class="btn btn-primary w-25 mx-auto">Login</a>
+        <a href="/register" class="btn btn-secondary w-25 mx-auto">Register</a>
+}
+else
+{
+        <a href="/tasks" class="btn btn-primary w-25 mx-auto">View Tasks</a>
+        <a href="/create-task" class="btn btn-secondary w-25 mx-auto">Create Task</a>
+        <btn @onclick="Logout" class="btn btn-info w-25 mx-auto">Log Out</btn>
+}
+</div>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+@code {
+    private bool isLoggedIn = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var jwtToken = await GetJwtTokenFromLocalStorage();
+
+            if (string.IsNullOrEmpty(jwtToken))
+            {
+                isLoggedIn = false;
+            }
+            else
+            {
+                isLoggedIn = true;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string?> GetJwtTokenFromLocalStorage()
+    {
+        return await localstorage.GetItemAsStringAsync("jwtToken");
+    }
+
+    private async Task Logout()
+    {
+        await localstorage.RemoveItemAsync("jwtToken");
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+}

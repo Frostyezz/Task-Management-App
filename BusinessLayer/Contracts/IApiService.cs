@@ -1,10 +1,12 @@
-﻿namespace BusinessLayer.Contracts
+﻿using BusinessLayer.Types;
+
+namespace BusinessLayer.Contracts
 {
     public interface IApiService
     {
-        Task<IApiResponse<object>> GetAsync(string uri);
-        Task<IApiResponse<object>> PostAsync(string uri, object data);
-        Task<IApiResponse<object>> PutAsync(string uri, object data);
-        Task<IApiResponse<object>> DeleteAsync(string uri);
+        Task<ApiResponse<T>> GetAsync<T>(string uri);
+        Task<ApiResponse<T>> PostAsync<T>(string uri, object data);
+        Task<ApiResponse<T>> PutAsync<T>(string uri, object data);
+        Task<ApiResponse<T>> DeleteAsync<T>(string uri);
     }
 }

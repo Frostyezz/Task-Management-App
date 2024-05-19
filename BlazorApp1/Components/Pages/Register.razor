@@ -44,9 +44,9 @@
 
     }
 
-    public async Task HandleSubmit(EditContext context)
+    public async System.Threading.Tasks.Task HandleSubmit(EditContext context)
     {
-        var res = await apiService.PostAsync("https://localhost:7027/Auth/register", context.Model);
+        var res = await apiService.PostAsync<string>("https://localhost:7027/Auth/register", context.Model);
         if (res.IsSuccess == true)
         {
             await localstorage.SetItemAsStringAsync("jwtToken", res.Data as string);

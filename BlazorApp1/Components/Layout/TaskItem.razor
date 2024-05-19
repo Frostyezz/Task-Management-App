@@ -1,0 +1,118 @@
+﻿@inject HttpClient httpClient
+@inject NavigationManager Navigation
+@inject ILocalStorageService localstorage
+@using BlazorApp1.Dto
+@using System.Net.Http.Headers
+@rendermode InteractiveServer
+
+<div class="card mb-3 shadow-sm task-item">
+    <div class="card-body d-flex justify-content-between align-items-start">
+        <div>
+            <h5 class="card-title">@Task.Title</h5>
+            <p class="card-text"><span class="badge bg-primary">Priority: @Task.Priority</span></p>
+            <p class="card-text"><small class="text-muted">Deadline: @Task.Deadline.ToString("yyyy-MM-dd")</small></p>
+            <p class="card-text"><small class="text-muted">Status: @Task.Status</small></p>
+            <p class="card-text"><small class="text-muted">Owner: @Task.Owner?.Name</small></p>
+
+            @if (Task.Assignees != null && Task.Assignees.Any())
+            {
+                <div>
+                    <small class="text-muted">Assignees:</small>
+                    <ul class="list-unstyled mt-1">
+                        @foreach (var assignee in Task.Assignees)
+                        {
+                            <li class="text-secondary">@assignee.Name</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (Task.Categories != null && Task.Categories.Any())
+            {
+                <div class="mt-2">
+                    <small class="text-muted">Categories:</small>
+                    <ul class="list-inline">
+                        @foreach (var category in Task.Categories)
+                        {
+                            <li class="list-inline-item">
+                                <span class="badge bg-secondary">@category</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (Task.Tags != null && Task.Tags.Any())
+            {
+                <div class="mt-2">
+                    <small class="text-muted">Tags:</small>
+                    <ul class="list-inline">
+                        @foreach (var tag in Task.Tags)
+                        {
+                            <li class="list-inline-item">
+                                <span class="badge bg-info">@tag</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex flex-column">
+            <button @onclick="OpenTask" class="btn btn-info mb-2">
+                <i class="fas fa-eye fa-sm"></i>
+            </button>
+            <button @onclick="OpenEditTask" class="btn btn-warning mb-2">
+                <i class="fas fa-edit fa-sm"></i>
+            </button>
+            <button class="btn btn-primary mb-2">
+                <i class="fas fa-plus fa-sm"></i>
+            </button>
+            <button @onclick="DeleteTask" class="btn btn-danger">
+                <i class="fas fa-trash-alt fa-sm"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public TaskDto Task { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedToken = await localstorage.GetItemAsStringAsync("jwtToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", savedToken);
+        }
+    }
+
+    private void OpenTask()
+    {
+        Navigation.NavigateTo($"/task/{Task.Id}");
+    }
+
+    private void OpenEditTask()
+    {
+        Navigation.NavigateTo($"/edit-task/{Task.Id}");
+    }
+
+    private async Task DeleteTask()
+    {
+         if (Task != null)
+         {
+             var apiService = new ApiService(httpClient);
+             var response = await apiService.DeleteAsync<TaskDto>("https://localhost:7027/Task/" + Task.Id);
+             if (response.IsSuccess)
+             {
+                Navigation.NavigateTo("/tasks", forceLoad: true);
+             }
+             else
+             {
+                 // Handle error
+                 Console.WriteLine(response.ErrorMessage);
+             }
+        }
+    }
+}
